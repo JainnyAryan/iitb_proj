@@ -1,0 +1,39 @@
+def shortest_path(n, edges, visitNodes):
+    graph = {}  # Create an adjacency list to represent the tree.
+    for u, v in edges:
+        if u not in graph:
+            graph[u] = []
+        if v not in graph:
+            graph[v] = []
+        graph[u].append(v)
+        graph[v].append(u)
+
+    def dfs(node, remaining_nodes, visited):
+        if not remaining_nodes:  # All visitNodes have been visited.
+            return 0
+
+        shortest_path_length = float('inf')
+
+        for neighbor in graph[node]:
+            if neighbor in remaining_nodes:
+                new_visited = visited.copy()
+                new_visited.add(neighbor)
+                new_remaining_nodes = remaining_nodes.copy()
+                new_remaining_nodes.remove(neighbor)
+                length = dfs(neighbor, new_remaining_nodes, new_visited)
+                shortest_path_length = min(shortest_path_length, length + 1)
+
+        return shortest_path_length
+
+    initial_remaining_nodes = set(visitNodes)
+    initial_visited = set([1])  # Start at node 1.
+    shortest_length = dfs(1, initial_remaining_nodes, initial_visited)
+
+    return shortest_length if shortest_length != float('inf') else -1
+
+# Example usage:
+n = 5
+edges = [[1, 2], [1, 3], [3, 4], [3, 5]]
+visitNodes = [2, 4]
+result = shortest_path(n, edges, visitNodes)
+print("Shortest Path Length:", result)
