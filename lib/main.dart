@@ -63,7 +63,7 @@ class _DrawingAppState extends State<DrawingApp> {
   Future<Uint8List> convertToImageData() async {
     final RenderRepaintBoundary boundary =
         globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-    final image = await boundary.toImage(pixelRatio: 0.5);
+    final image = await boundary.toImage(pixelRatio: 0.3);
     final byteData = await image.toByteData(format: ImageByteFormat.png);
     final buffer = byteData!.buffer.asUint8List();
 
@@ -127,7 +127,9 @@ class _DrawingAppState extends State<DrawingApp> {
         onPanEnd: (details) async {
           // await _saveAsImage();
           await uploadImageToAPI();
-          points.clear();
+          setState(() {
+            points.clear();
+          });
         },
         child: RepaintBoundary(
           key: globalKey,
