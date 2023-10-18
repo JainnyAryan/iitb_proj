@@ -36,7 +36,7 @@ class _DrawingAppState extends State<DrawingApp> {
     final buffer = await convertToImageData();
     String base64Image = base64Encode(buffer);
     final url =
-        Uri.parse("http://iitbproj.pythonanywhere.com/upload_to_firebase");
+        Uri.parse("https://iitbproj.pythonanywhere.com/upload_to_firebase");
     var response = await http.post(url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
