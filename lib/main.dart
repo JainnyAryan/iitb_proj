@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 
 import 'custom_pattern_lock.dart';
@@ -61,10 +63,19 @@ class _PatternLockScreenState extends State<PatternLockScreen> {
                       constraints.maxHeight
                     ];
                     print("pattern is $input");
-                    await utils.uploadPatternToAPI(points, context, canvasSize);
                     setState(() {
                       pattern = input.join(" ");
                     });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Uploading")));
+                    final response = await utils.uploadPatternToAPI(
+                        points, context, canvasSize);
+                    ScaffoldMessenger.of(context).removeCurrentSnackBar();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(response),
+                      ),
+                    );
                   },
                 ),
               ),

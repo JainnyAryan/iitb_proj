@@ -56,33 +56,34 @@ class Utils {
     return Future.value(buffer);
   }
 
-  Future<void> uploadPatternToAPI(List<Offset> offsets, BuildContext context,
+  Future<String> uploadPatternToAPI(List<Offset> offsets, BuildContext context,
       List<double> canvasSize) async {
     final buffer = await convertOffsetsToImageData(offsets, canvasSize);
     String base64Image = base64Encode(buffer);
     final url =
-        Uri.parse("http://iitbproj.pythonanywhere.com/upload_to_firebase");
+        Uri.parse("https://iitbproj.pythonanywhere.com/upload_to_firebase");
     var response = await http.post(url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'base64_image_encoded': base64Image,
         }));
 
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Pattern Upload'),
-        content: Text(response.body),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
+    // showDialog(
+    //   context: context,
+    //   builder: (_) => AlertDialog(
+    //     title: const Text('Pattern Upload'),
+    //     content: Text(response.body),
+    //     actions: [
+    //       TextButton(
+    //         onPressed: () {
+    //           Navigator.of(context).pop();
+    //         },
+    //         child: const Text('OK'),
+    //       ),
+    //     ],
+    //   ),
+    // );
+    return response.body;
   }
 
   Future<void> _saveAsImage(List<Offset> offsets, BuildContext context,
