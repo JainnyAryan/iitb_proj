@@ -50,13 +50,15 @@ class _PatternLockScreenState extends State<PatternLockScreen> {
               child: LayoutBuilder(
                 builder: (context, constraints) => CustomPatternLock(
                   selectedColor: Colors.green,
-                  pointRadius: 10,
+                  pointRadius: 30,
                   showInput: true,
                   dimension: 3,
                   relativePadding: 0.5,
                   selectThreshold: 25,
                   fillPoints: true,
                   notSelectedColor: Colors.red,
+                  digitColor: Colors.white,
+                  selectedDigitColor: Colors.yellowAccent,
                   onInputComplete: (input, points) async {
                     final canvasSize = [
                       constraints.maxWidth,

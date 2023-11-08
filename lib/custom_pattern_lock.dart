@@ -8,6 +8,9 @@ class CustomPatternLock extends StatefulWidget {
   /// Padding of points area relative to distance between points.
   final double relativePadding;
 
+  final Color digitColor;
+  final Color selectedDigitColor;
+
   /// Color of selected points.
   final Color? selectedColor;
 
@@ -32,6 +35,8 @@ class CustomPatternLock extends StatefulWidget {
   /// Creates [CustomPatternLock] with given params.
   const CustomPatternLock({
     Key? key,
+    this.digitColor = Colors.black,
+    this.selectedDigitColor = Colors.white,
     this.dimension = 3,
     this.relativePadding = 0.7,
     this.selectedColor, // Theme.of(context).primaryColor if null
@@ -49,16 +54,26 @@ class CustomPatternLock extends StatefulWidget {
 
 class _CustomPatternLockState extends State<CustomPatternLock> {
   List<int> used = [];
+  List<int> randomPoints = [1, 2, 3, 4, 5, 6, 7, 8, 9];
   List<Offset> points = [];
   Offset? currentPoint;
   Utils utils = Utils();
 
   @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    randomPoints.shuffle();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onPanEnd: (DragEndDetails details) {
+        // sending randomized points
+        final randomPointsUsed = [for (var i in used) randomPoints[i]];
         if (used.isNotEmpty) {
-          widget.onInputComplete(used, points);
+          widget.onInputComplete(randomPointsUsed, points);
         }
         setState(() {
           points = [];
@@ -91,9 +106,12 @@ class _CustomPatternLockState extends State<CustomPatternLock> {
       },
       child: CustomPaint(
         painter: _LockPainter(
+          randomPoints: randomPoints,
           dimension: widget.dimension,
           used: used,
           currentPoint: currentPoint,
+          digitColor: widget.digitColor,
+          selectedDigitColor: widget.selectedDigitColor,
           relativePadding: widget.relativePadding,
           selectedColor: widget.selectedColor ?? Theme.of(context).primaryColor,
           notSelectedColor: widget.notSelectedColor,
@@ -108,12 +126,15 @@ class _CustomPatternLockState extends State<CustomPatternLock> {
 }
 
 class _LockPainter extends CustomPainter {
+  final List<int> randomPoints;
   final int dimension;
   final List<int> used;
   final Offset? currentPoint;
   final double relativePadding;
   final double pointRadius;
   final bool showInput;
+  final Color digitColor;
+  final Color selectedDigitColor;
 
   final Paint circlePaint;
   final Paint selectedPaint;
@@ -121,9 +142,12 @@ class _LockPainter extends CustomPainter {
   Utils utils = Utils();
 
   _LockPainter({
+    required this.randomPoints,
     required this.dimension,
     required this.used,
     this.currentPoint,
+    this.digitColor = Colors.black,
+    this.selectedDigitColor = Colors.white,
     required this.relativePadding,
     required Color selectedColor,
     required Color notSelectedColor,
@@ -138,7 +162,7 @@ class _LockPainter extends CustomPainter {
           ..color = selectedColor
           ..style = fillPoints ? PaintingStyle.fill : PaintingStyle.stroke
           ..strokeCap = StrokeCap.round
-          ..strokeWidth = 2;
+          ..strokeWidth = pointRadius * 0.2;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -147,12 +171,36 @@ class _LockPainter extends CustomPainter {
 
     for (int i = 0; i < dimension; ++i) {
       for (int j = 0; j < dimension; ++j) {
+        final int index = i * dimension + j;
+        final bool isSelected = showInput && used.contains(index);
+
+        // Draw the circle
         canvas.drawCircle(
-          circlePosition(i * dimension + j),
+          circlePosition(index),
           pointRadius,
-          showInput && used.contains(i * dimension + j)
-              ? selectedPaint
-              : circlePaint,
+          isSelected ? selectedPaint : circlePaint,
+        );
+
+        // Draw the digit inside the circle
+        final textPainter = TextPainter(
+          text: TextSpan(
+            text: randomPoints[index].toString(),
+            style: TextStyle(
+              color: isSelected
+                  ? selectedDigitColor
+                  : digitColor, // Customize text color
+              fontSize: pointRadius * 1.1, // Customize text size
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        );
+        textPainter.layout(minWidth: 0, maxWidth: pointRadius * 2);
+        textPainter.paint(
+          canvas,
+          Offset(
+            circlePosition(index).dx - pointRadius * 0.3,
+            circlePosition(index).dy - pointRadius * 0.6,
+          ),
         );
       }
     }
@@ -179,27 +227,4 @@ class _LockPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(CustomPainter oldDelegate) => true;
-}
-
-class DrawingPainter extends CustomPainter {
-  final List<Offset> points;
-
-  DrawingPainter(this.points);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    Paint paint = Paint()
-      ..color = const Color.fromARGB(255, 254, 228, 1)
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = 5.0;
-
-    for (int i = 0; i < points.length - 1; i++) {
-      canvas.drawLine(points[i], points[i + 1], paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) {
-    return true;
-  }
 }
