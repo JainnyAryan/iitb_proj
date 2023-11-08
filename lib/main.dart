@@ -1,175 +1,81 @@
-// ignore_for_file: use_build_context_synchronously
-
-import 'dart:convert';
-import 'dart:typed_data';
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:http/http.dart' as http;
+
+import 'custom_pattern_lock.dart';
+import 'utils.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({Key? key});
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: DrawingApp(),
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Pattern Lock Screen',
+      home: PatternLockScreen(),
     );
   }
 }
 
-class DrawingApp extends StatefulWidget {
+class PatternLockScreen extends StatefulWidget {
+  const PatternLockScreen({Key? key}) : super(key: key);
+
   @override
-  _DrawingAppState createState() => _DrawingAppState();
+  _PatternLockScreenState createState() => _PatternLockScreenState();
 }
 
-class _DrawingAppState extends State<DrawingApp> {
-  List<Offset> points = [];
-  final globalKey = GlobalKey();
+class _PatternLockScreenState extends State<PatternLockScreen> {
+  String pattern = '';
+  List points = [];
 
-  Future<void> uploadImageToAPI() async {
-    final buffer = await convertToImageData();
-    String base64Image = base64Encode(buffer);
-    final url =
-        Uri.parse("https://iitbproj.pythonanywhere.com/upload_to_firebase");
-    var response = await http.post(url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'base64_image_encoded': base64Image,
-        }));
-
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Image Upload'),
-        content: Text(response.body),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<Uint8List> convertToImageData() async {
-    final RenderRepaintBoundary boundary =
-        globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-    final image = await boundary.toImage(pixelRatio: 0.3);
-    final byteData = await image.toByteData(format: ImageByteFormat.png);
-    final buffer = byteData!.buffer.asUint8List();
-
-    return Future.value(buffer);
-  }
-
-  Future<void> _saveAsImage() async {
-    try {
-      final buffer = await convertToImageData();
-
-      // Request permission to access the photo library
-      var status = await Permission.mediaLibrary.request();
-
-      if (status.isGranted) {
-        // Permission granted, proceed to save the image
-        final result =
-            await ImageGallerySaver.saveImage(Uint8List.fromList(buffer));
-
-        if (result['isSuccess']) {
-          showDialog(
-            context: context,
-            builder: (_) => AlertDialog(
-              title: const Text('Image Saved'),
-              content:
-                  const Text('The drawing has been saved to your gallery.'),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('OK'),
-                ),
-              ],
-            ),
-          );
-        } else {
-          print('Failed to save the image.');
-        }
-      } else {
-        // Permission denied, handle accordingly
-        print('Permission denied to access the photo library.');
-      }
-    } catch (e) {
-      print(e.toString());
-    }
-  }
+  final utils = Utils();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Drawing App'),
+        title: const Text('Gesture Pattern Lock'),
       ),
-      body: GestureDetector(
-        onPanUpdate: (details) {
-          setState(() {
-            points.add(details
-                .localPosition); // Use localPosition instead of globalPosition
-          });
-        },
-        onPanEnd: (details) async {
-          // await _saveAsImage();
-          await uploadImageToAPI();
-          setState(() {
-            points.clear();
-          });
-        },
-        child: RepaintBoundary(
-          key: globalKey,
-          child: CustomPaint(
-            painter: DrawingPainter(points),
-            size: Size.infinite,
-          ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Container(
+              height: 500,
+              child: LayoutBuilder(
+                builder: (context, constraints) => CustomPatternLock(
+                  selectedColor: Colors.green,
+                  pointRadius: 10,
+                  showInput: true,
+                  dimension: 3,
+                  relativePadding: 0.5,
+                  selectThreshold: 25,
+                  fillPoints: true,
+                  notSelectedColor: Colors.red,
+                  onInputComplete: (input, points) async {
+                    final canvasSize = [
+                      constraints.maxWidth,
+                      constraints.maxHeight
+                    ];
+                    print("pattern is $input");
+                    await utils.uploadPatternToAPI(points, context, canvasSize);
+                    setState(() {
+                      pattern = input.join(" ");
+                    });
+                  },
+                ),
+              ),
+            ),
+            Text(
+              'Pattern: $pattern',
+              style: const TextStyle(color: Colors.black),
+            ),
+          ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          setState(() {
-            points.clear();
-          });
-        },
-        child: const Icon(Icons.clear),
-      ),
     );
-  }
-}
-
-class DrawingPainter extends CustomPainter {
-  final List<Offset> points;
-
-  DrawingPainter(this.points);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    Paint paint = Paint()
-      ..color = const Color.fromARGB(255, 254, 228, 1)
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = 5.0;
-
-    for (int i = 0; i < points.length - 1; i++) {
-      canvas.drawLine(points[i], points[i + 1], paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) {
-    return true;
   }
 }
