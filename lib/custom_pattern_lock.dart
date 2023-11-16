@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:iitb_proj/utils.dart';
 
@@ -20,6 +22,9 @@ class CustomPatternLock extends StatefulWidget {
   /// Radius of points.
   final double pointRadius;
 
+  /// Radius of full circle
+  final double circleRadiusCoefficient;
+
   /// Whether show user's input and highlight selected points.
   final bool showInput;
 
@@ -35,6 +40,7 @@ class CustomPatternLock extends StatefulWidget {
   /// Creates [CustomPatternLock] with given params.
   const CustomPatternLock({
     Key? key,
+    this.circleRadiusCoefficient = 1,
     this.digitColor = Colors.black,
     this.selectedDigitColor = Colors.white,
     this.dimension = 3,
@@ -54,23 +60,23 @@ class CustomPatternLock extends StatefulWidget {
 
 class _CustomPatternLockState extends State<CustomPatternLock> {
   List<int> used = [];
-  List<int> randomPoints = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+  List<int> randomPoints = [];
   List<Offset> points = [];
   Offset? currentPoint;
   Utils utils = Utils();
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
+    randomPoints = List.generate(widget.dimension, (index) => index + 1);
     randomPoints.shuffle();
+    print(randomPoints);
   }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onPanEnd: (DragEndDetails details) {
-        // sending randomized points
         final randomPointsUsed = [for (var i in used) randomPoints[i]];
         if (used.isNotEmpty) {
           widget.onInputComplete(randomPointsUsed, points);
@@ -92,11 +98,12 @@ class _CustomPatternLockState extends State<CustomPatternLock> {
               referenceBox.size,
               widget.dimension,
               widget.relativePadding,
+              widget.circleRadiusCoefficient,
             );
 
         setState(() {
           currentPoint = localPosition;
-          for (int i = 0; i < widget.dimension * widget.dimension; ++i) {
+          for (int i = 0; i < widget.dimension; ++i) {
             final toPoint = (circlePosition(i) - localPosition).distance;
             if (!used.contains(i) && toPoint < widget.selectThreshold) {
               used.add(i);
@@ -112,6 +119,7 @@ class _CustomPatternLockState extends State<CustomPatternLock> {
           currentPoint: currentPoint,
           digitColor: widget.digitColor,
           selectedDigitColor: widget.selectedDigitColor,
+          circleRadiusCoefficient: widget.circleRadiusCoefficient,
           relativePadding: widget.relativePadding,
           selectedColor: widget.selectedColor ?? Theme.of(context).primaryColor,
           notSelectedColor: widget.notSelectedColor,
@@ -135,7 +143,7 @@ class _LockPainter extends CustomPainter {
   final bool showInput;
   final Color digitColor;
   final Color selectedDigitColor;
-
+  final double circleRadiusCoefficient;
   final Paint circlePaint;
   final Paint selectedPaint;
 
@@ -148,6 +156,7 @@ class _LockPainter extends CustomPainter {
     this.currentPoint,
     this.digitColor = Colors.black,
     this.selectedDigitColor = Colors.white,
+    this.circleRadiusCoefficient = 1,
     required this.relativePadding,
     required Color selectedColor,
     required Color notSelectedColor,
@@ -166,43 +175,44 @@ class _LockPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    Offset circlePosition(int n) =>
-        utils.calcCirclePosition(n, size, dimension, relativePadding);
-
-    for (int i = 0; i < dimension; ++i) {
-      for (int j = 0; j < dimension; ++j) {
-        final int index = i * dimension + j;
-        final bool isSelected = showInput && used.contains(index);
-
-        // Draw the circle
-        canvas.drawCircle(
-          circlePosition(index),
-          pointRadius,
-          isSelected ? selectedPaint : circlePaint,
+    Offset circlePosition(int n) => utils.calcCirclePosition(
+          n,
+          size,
+          dimension,
+          relativePadding,
+          circleRadiusCoefficient
         );
 
-        // Draw the digit inside the circle
-        final textPainter = TextPainter(
-          text: TextSpan(
-            text: randomPoints[index].toString(),
-            style: TextStyle(
-              color: isSelected
-                  ? selectedDigitColor
-                  : digitColor, // Customize text color
-              fontSize: pointRadius * 1.1, // Customize text size
-            ),
+    for (int i = 0; i < min(dimension, randomPoints.length); ++i) {
+      final int index = i;
+      final bool isSelected = showInput && used.contains(index);
+
+      // Draw the circle
+      canvas.drawCircle(
+        circlePosition(index),
+        pointRadius,
+        isSelected ? selectedPaint : circlePaint,
+      );
+
+      // Draw the digit inside the circle
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: randomPoints[index].toString(),
+          style: TextStyle(
+            color: isSelected ? selectedDigitColor : digitColor,
+            fontSize: pointRadius * 1.1,
           ),
-          textDirection: TextDirection.ltr,
-        );
-        textPainter.layout(minWidth: 0, maxWidth: pointRadius * 2);
-        textPainter.paint(
-          canvas,
-          Offset(
-            circlePosition(index).dx - pointRadius * 0.3,
-            circlePosition(index).dy - pointRadius * 0.6,
-          ),
-        );
-      }
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout(minWidth: 0, maxWidth: pointRadius * 2);
+      textPainter.paint(
+        canvas,
+        Offset(
+          circlePosition(index).dx - pointRadius * 0.3,
+          circlePosition(index).dy - pointRadius * 0.6,
+        ),
+      );
     }
 
     if (showInput) {

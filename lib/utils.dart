@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
 
@@ -10,20 +11,16 @@ import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class Utils {
-  Offset calcCirclePosition(
-      int n, Size size, int dimension, double relativePadding) {
-    final o = size.width > size.height
-        ? Offset((size.width - size.height) / 2, 0)
-        : Offset(0, (size.height - size.width) / 2);
-    return o +
-        Offset(
-          size.shortestSide /
-              (dimension - 1 + relativePadding * 2) *
-              (n % dimension + relativePadding),
-          size.shortestSide /
-              (dimension - 1 + relativePadding * 2) *
-              (n ~/ dimension + relativePadding),
-        );
+  Offset calcCirclePosition(int n, Size size, int dimension,
+      double relativePadding, double circleRadiusCoefficient) {
+    double angle = 2 * pi * (n / (dimension));
+    double radius = (size.shortestSide / 2 -
+        relativePadding * size.shortestSide / (dimension - 1));
+    radius = radius * circleRadiusCoefficient;
+    double x = size.width / 2 + radius * cos(angle);
+    double y = size.height / 2 + radius * sin(angle);
+
+    return Offset(x, y);
   }
 
   Future<Uint8List> convertOffsetsToImageData(

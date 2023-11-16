@@ -45,46 +45,58 @@ class _PatternLockScreenState extends State<PatternLockScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Container(
-              height: 500,
-              child: LayoutBuilder(
-                builder: (context, constraints) => CustomPatternLock(
-                  selectedColor: Colors.green,
-                  pointRadius: 30,
-                  showInput: true,
-                  dimension: 3,
-                  relativePadding: 0.5,
-                  selectThreshold: 25,
-                  fillPoints: true,
-                  notSelectedColor: Colors.red,
-                  digitColor: Colors.white,
-                  selectedDigitColor: Colors.yellowAccent,
-                  onInputComplete: (input, points) async {
-                    final canvasSize = [
-                      constraints.maxWidth,
-                      constraints.maxHeight
-                    ];
-                    print("pattern is $input");
-                    setState(() {
-                      pattern = input.join(" ");
-                    });
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Uploading")));
-                    final response = await utils.uploadPatternToAPI(
-                        points, context, canvasSize);
-                    ScaffoldMessenger.of(context).removeCurrentSnackBar();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(response),
-                      ),
-                    );
-                  },
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  vertical: MediaQuery.of(context).size.height * 0.1,
+                  horizontal: MediaQuery.of(context).size.width * 0.1,
+                ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) => CustomPatternLock(
+                    selectedColor: Colors.green,
+                    pointRadius: (constraints.maxHeight > constraints.maxWidth
+                            ? constraints.maxWidth
+                            : constraints.maxHeight) *
+                        0.08,
+                    circleRadiusCoefficient: 1,
+                    showInput: true,
+                    dimension: 9,
+                    relativePadding: 0.5,
+                    selectThreshold: 25,
+                    fillPoints: true,
+                    notSelectedColor: Colors.red,
+                    digitColor: Colors.white,
+                    selectedDigitColor: Colors.yellowAccent,
+                    onInputComplete: (input, points) async {
+                      final canvasSize = [
+                        constraints.maxWidth,
+                        constraints.maxHeight
+                      ];
+                      print("pattern is $input");
+                      setState(() {
+                        pattern = input.join(" ");
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Uploading")));
+                      final response = await utils.uploadPatternToAPI(
+                          points, context, canvasSize);
+                      ScaffoldMessenger.of(context).removeCurrentSnackBar();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(response),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
-            Text(
-              'Pattern: $pattern',
-              style: const TextStyle(color: Colors.black),
+            Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Text(
+                'Pattern: $pattern',
+                style: const TextStyle(color: Colors.black),
+              ),
             ),
           ],
         ),
