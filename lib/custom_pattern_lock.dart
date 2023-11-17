@@ -5,7 +5,7 @@ import 'package:iitb_proj/utils.dart';
 
 class CustomPatternLock extends StatefulWidget {
   /// Count of points horizontally and vertically.
-  final int dimension;
+  final int numberOfPoints;
 
   /// Padding of points area relative to distance between points.
   final double relativePadding;
@@ -43,7 +43,7 @@ class CustomPatternLock extends StatefulWidget {
     this.circleRadiusCoefficient = 1,
     this.digitColor = Colors.black,
     this.selectedDigitColor = Colors.white,
-    this.dimension = 3,
+    this.numberOfPoints = 3,
     this.relativePadding = 0.7,
     this.selectedColor, // Theme.of(context).primaryColor if null
     this.notSelectedColor = Colors.black45,
@@ -68,7 +68,7 @@ class _CustomPatternLockState extends State<CustomPatternLock> {
   @override
   void initState() {
     super.initState();
-    randomPoints = List.generate(widget.dimension, (index) => index + 1);
+    randomPoints = List.generate(widget.numberOfPoints, (index) => index + 1);
     randomPoints.shuffle();
     print(randomPoints);
   }
@@ -76,6 +76,17 @@ class _CustomPatternLockState extends State<CustomPatternLock> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      onPanDown: (details) {
+        final randomPointsUsed = [for (var i in used) randomPoints[i]];
+        if (used.isNotEmpty) {
+          widget.onInputComplete(randomPointsUsed, points);
+        }
+        setState(() {
+          points = [];
+          used = [];
+          currentPoint = null;
+        });
+      },
       onPanEnd: (DragEndDetails details) {
         final randomPointsUsed = [for (var i in used) randomPoints[i]];
         if (used.isNotEmpty) {
@@ -96,14 +107,14 @@ class _CustomPatternLockState extends State<CustomPatternLock> {
         Offset circlePosition(int n) => utils.calcCirclePosition(
               n,
               referenceBox.size,
-              widget.dimension,
+              widget.numberOfPoints,
               widget.relativePadding,
               widget.circleRadiusCoefficient,
             );
 
         setState(() {
           currentPoint = localPosition;
-          for (int i = 0; i < widget.dimension; ++i) {
+          for (int i = 0; i < widget.numberOfPoints; ++i) {
             final toPoint = (circlePosition(i) - localPosition).distance;
             if (!used.contains(i) && toPoint < widget.selectThreshold) {
               used.add(i);
@@ -114,7 +125,7 @@ class _CustomPatternLockState extends State<CustomPatternLock> {
       child: CustomPaint(
         painter: _LockPainter(
           randomPoints: randomPoints,
-          dimension: widget.dimension,
+          numberOfPoints: widget.numberOfPoints,
           used: used,
           currentPoint: currentPoint,
           digitColor: widget.digitColor,
@@ -135,7 +146,7 @@ class _CustomPatternLockState extends State<CustomPatternLock> {
 
 class _LockPainter extends CustomPainter {
   final List<int> randomPoints;
-  final int dimension;
+  final int numberOfPoints;
   final List<int> used;
   final Offset? currentPoint;
   final double relativePadding;
@@ -151,7 +162,7 @@ class _LockPainter extends CustomPainter {
 
   _LockPainter({
     required this.randomPoints,
-    required this.dimension,
+    required this.numberOfPoints,
     required this.used,
     this.currentPoint,
     this.digitColor = Colors.black,
@@ -176,14 +187,9 @@ class _LockPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     Offset circlePosition(int n) => utils.calcCirclePosition(
-          n,
-          size,
-          dimension,
-          relativePadding,
-          circleRadiusCoefficient
-        );
+        n, size, numberOfPoints, relativePadding, circleRadiusCoefficient);
 
-    for (int i = 0; i < min(dimension, randomPoints.length); ++i) {
+    for (int i = 0; i < min(numberOfPoints, randomPoints.length); ++i) {
       final int index = i;
       final bool isSelected = showInput && used.contains(index);
 
