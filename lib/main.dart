@@ -59,7 +59,7 @@ class _PatternLockScreenState extends State<PatternLockScreen> {
                         0.08,
                     circleRadiusCoefficient: 1,
                     showInput: true,
-                    numberOfPoints: 9,
+                    numberOfPoints: 91,
                     relativePadding: 0.5,
                     selectThreshold: 25,
                     fillPoints: true,
