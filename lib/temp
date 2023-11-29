@@ -1,0 +1,85 @@
+class _CustomPatternLockState extends State<CustomPatternLock> {
+  List<int> used = [];
+  List<int> randomPoints = [];
+  List<Offset> points = [];
+  Offset? currentPoint;
+  Utils utils = Utils();
+
+  @override
+  void initState() {
+    super.initState();
+    randomPoints = List.generate(widget.numberOfPoints, (index) => index + 1);
+    randomPoints.shuffle();
+    print(randomPoints);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onPanDown: (details) {
+        final randomPointsUsed = [for (var i in used) randomPoints[i]];
+        if (used.isNotEmpty) {
+          widget.onInputComplete(randomPointsUsed, points);
+        }
+        setState(() {
+          points = [];
+          used = [];
+          currentPoint = null;
+        });
+      },
+      onPanEnd: (DragEndDetails details) {
+        final randomPointsUsed = [for (var i in used) randomPoints[i]];
+        if (used.isNotEmpty) {
+          widget.onInputComplete(randomPointsUsed, points);
+        }
+        setState(() {
+          points = [];
+          used = [];
+          currentPoint = null;
+        });
+      },
+      onPanUpdate: (details) {
+        points.add(details.localPosition);
+        RenderBox referenceBox = context.findRenderObject() as RenderBox;
+        Offset localPosition =
+            referenceBox.globalToLocal(details.globalPosition);
+
+        Offset circlePosition(int n) => utils.calcCirclePosition(
+              n,
+              referenceBox.size,
+              widget.numberOfPoints,
+              widget.relativePadding,
+              widget.circleRadiusCoefficient,
+            );
+
+        setState(() {
+          currentPoint = localPosition;
+          for (int i = 0; i < widget.numberOfPoints; ++i) {
+            final toPoint = (circlePosition(i) - localPosition).distance;
+            if (!used.contains(i) && toPoint < widget.selectThreshold) {
+              used.add(i);
+            }
+          }
+        });
+      },
+      child: CustomPaint(
+        painter: _LockPainter(
+          randomPoints: randomPoints,
+          numberOfPoints: widget.numberOfPoints,
+          used: used,
+          currentPoint: currentPoint,
+          digitColor: widget.digitColor,
+          selectedDigitColor: widget.selectedDigitColor,
+          circleRadiusCoefficient: widget.circleRadiusCoefficient,
+          relativePadding: widget.relativePadding,
+          selectedColor: widget.selectedColor ?? Theme.of(context).primaryColor,
+          notSelectedColor: widget.notSelectedColor,
+          pointRadius: widget.pointRadius,
+          showInput: widget.showInput,
+          fillPoints: widget.fillPoints,
+        ),
+        size: Size.infinite,
+      ),
+    );
+  }
+}
