@@ -104,7 +104,6 @@ class _PatternLockScreenState extends State<PatternLockScreen> {
                         setState(() {
                           pattern = "${userInput.join(" ")}\n$jitterInfo";
                         });
-
                         showDialog(
                           context: context,
                           builder: (context) {
@@ -158,7 +157,9 @@ class _PatternLockScreenState extends State<PatternLockScreen> {
                                             randomPointsPositions:
                                                 randomPointsPositions);
 
-                                    ScaffoldMessenger.of(_scaffoldKey.currentContext!).showSnackBar(
+                                    ScaffoldMessenger.of(
+                                            _scaffoldKey.currentContext!)
+                                        .showSnackBar(
                                       SnackBar(
                                         duration: Duration(seconds: 1),
                                         content: Text(response),

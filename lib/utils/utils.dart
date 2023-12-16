@@ -176,7 +176,8 @@ class Utils {
     String jitterCsvDataString =
         jitterCsvData!.map((e) => (e as List).join(",")).toList().join("\n");
 
-    jitterUserCsvData!.last = jitterUserCsvData.last.toString().replaceAll("\n", ". ");
+    jitterUserCsvData!.last =
+        jitterUserCsvData.last.toString().replaceAll("\n", ". ");
     String jitterUserCsvDataString = jitterUserCsvData.join(",");
     print(jitterUserCsvDataString);
 
